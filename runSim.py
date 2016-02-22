@@ -4,7 +4,7 @@ import subprocess
 import json
 
 if len(sys.argv) < 2:
-    print "Usage: python seeds.py graph_filename.json strat1 strat2 ..."
+    print "Usage: python runSim.py graph_filename.json strat1 strat2 ..."
     sys.exit()
 
 
@@ -16,7 +16,7 @@ graph_id = int(info[2])
 
 strats = sys.argv[2:]
 if num_players != len(strats):
-    print "Usage: python seeds.py graph_filename.json strat1 strat2 ..."
+    print "Usage: python runSim.py graph_filename.json strat1 strat2 ..."
     sys.exit()
 
 d = {}

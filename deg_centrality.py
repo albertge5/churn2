@@ -20,22 +20,22 @@ def run(NUM_ROUNDS = 50):
 
     myfile = open("output.txt", "w")
 
+    for key, val in data.iteritems():
+        centrality = len(val)
+        if len(top) < num_seeds:
+            heapq.heappush(top, (centrality, key))
+
+        elif centrality > top[0][0]:
+            heapq.heappop(top)
+            heapq.heappush(top, (centrality, key))
+
+    for i in range(len(top)):
+        top[i] = [top[i][0], int(top[i][1])]
+    top.sort(reverse = True)
+
     for i in range(NUM_ROUNDS):
-        for key, val in data.iteritems():
-            centrality = len(val)
-            if len(top) < num_seeds:
-                heapq.heappush(top, (centrality, key))
-
-            elif centrality > top[0][0]:
-                heapq.heappop(top)
-                heapq.heappush(top, (centrality, key))
-
-        for i in range(len(top)):
-            top[i] = [top[i][0], int(top[i][1])]
-        top.sort(reverse = True)
-        for node, centrality in top:
-            myfile.write("%d\n" %(centrality))
-
+        for centrality, node in top:
+            myfile.write("%d\n" %(int(node)))
 
 if __name__ == '__main__':
     if len(sys.argv) < 2:
