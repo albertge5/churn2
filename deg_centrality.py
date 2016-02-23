@@ -20,15 +20,19 @@ def run(NUM_ROUNDS = 50):
 
     myfile = open("output.txt", "w")
 
+    # This is each node/neighbor pair.
     for key, val in data.iteritems():
         centrality = len(val)
         if len(top) < num_seeds:
             heapq.heappush(top, (centrality, key))
 
+        # If we find something larger than the minimum, we pop that and push
+        # the new value.
         elif centrality > top[0][0]:
             heapq.heappop(top)
             heapq.heappush(top, (centrality, key))
 
+    # Selecting the right nodes.
     for i in range(len(top)):
         top[i] = [top[i][0], int(top[i][1])]
     top.sort(reverse = True)

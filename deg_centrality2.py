@@ -14,7 +14,7 @@ degree node.
 '''
 
 def run(NUM_ROUNDS = 50):
-
+    # This is the JSON file that will be parsed.
     file = sys.argv[1]
     info = file.split('.')
     num_players = int(info[0])
@@ -29,19 +29,30 @@ def run(NUM_ROUNDS = 50):
     adj_list = []
 
     myfile = open("output.txt", "w")
+
+    # This is each node/neighbor pair.
     for key, val in data.iteritems():
+
         centrality = len(val)
+
         if len(top) < num_seeds:
             if len(val) > len(adj_list):
+                # Trying to get the adjacency list of the highest
+                # degree.
                 adj_list = val
+
+            # This heap is used to sort quickly and to store minimum easily.
             heapq.heappush(top, (centrality, key))
 
+        # If we find something larger than the minimum, we pop that and push
+        # the new value.
         elif centrality > top[0][0]:
             if len(val) > len(adj_list):
                 adj_list = val
             heapq.heappop(top)
             heapq.heappush(top, (centrality, key))
 
+    # Selecting the right nodes.
     for i in range(len(top)):
         top[i] = [top[i][0], int(top[i][1])]
     top.sort(reverse = True)
