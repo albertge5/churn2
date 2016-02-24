@@ -1,5 +1,6 @@
 import sim
 import sys
+import numpy as np
 import subprocess
 import json
 import os
@@ -39,6 +40,16 @@ for dirName in os.listdir(dir):
 with open('costMatrix', 'w') as f:
     json.dump(scores, f)
 
+keys1 = scores.keys()
+keys2 = scores[keys1[0]].keys()
+lookUp1 = {keys1[i]: i for i in range(len(keys1))}
+lookUp2 = {keys2[i]: i for i in range(len(kyes2))}
+scoreMatrix = np.zeros(len(keys1), len(keys2))
+for key1 in keys1:
+    for key2 in keys2:
+        scoreMatrix[lookUp1[keys1]][lookUp2[keys2]] = scores[key1][key2]
+
+np.savetxt('costMatrix.csv', scoreMatrix, delimiter=",")
 
 
 
