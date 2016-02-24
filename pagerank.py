@@ -131,7 +131,7 @@ def run(rounds = 2):
 if __name__ == '__main__':
 
     # If the number of arguments isn't correct, we print a usage thing.
-    if len(sys.argv) != 3:
+    if len(sys.argv) < 3:
         print "Usage: python", sys.argv[0], "GRAPH.json WEIGHTS.csv [ITERATIONS]\n" \
               "Example: python", sys.argv[0], "2.5.1.json weights.csv"
         sys.exit()
