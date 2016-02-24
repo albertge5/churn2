@@ -88,7 +88,7 @@ def findMinSpanTrees(adjacencyList):
         vertices.append(neighbor)
         edges.append(edge)
 
-    while len(vertices) == numVertices:
+    while len(vertices) != numVertices:
         # Two cases here:
         # 1: The queue is now empty (we exhausted this component)
         #       We first make an adjacency matrix for this.
@@ -155,6 +155,12 @@ def findMinSpanTrees(adjacencyList):
                     vertices.append(neighbor)
                     edges.append(edge)
 
+
+    # This is for the last connected component.
+    treeEdges.append(edges)
+    adjList = createAdjList(edges)
+    treesAdjList.append(adjList)
+
     return (treeEdges, treesAdjList)
 
 # Using minimum spanning trees, we will be finding the bridge vertices.
@@ -162,6 +168,8 @@ def findMinSpanTrees(adjacencyList):
 def findBridges(adjacencyList):
     # First, we need to find the minimum spanning trees
     spanEdges, spanTrees = findMinSpanTrees(adjacencyList)
+    print adjacencyList
+    print spanTrees
 
 # This basically parses the stuff and then invokes the bridge.
 def run(rounds = 50):
