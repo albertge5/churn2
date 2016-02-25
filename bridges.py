@@ -196,11 +196,15 @@ def preOrderVertices(edges, numVertices):
     orderedVertices.append(orderedVertex)
 
     for edge in edges:
-        continue
+        srcVert = edge[0]
+        destVert = edge[1]
+        if destVert not in vertices:
+            orderIdx += 1
+            orderedVertex = (orderIdx, destVert)
+            vertices.append(destVert)
+            orderedVertices.append(orderedVertex)
 
-
-
-
+    return orderedVertices
 
 # Using minimum spanning trees, we will be finding the bridge vertices.
 # This uses Tarjan's algorithm.
@@ -211,13 +215,188 @@ def findBridges(adjacencyList):
     # First, we need to find the minimum spanning trees
     spanEdges, spanTrees = findMinSpanTrees(adjacencyList)
     listToJSON(spanTrees[0])
-    # Now, we iterate through the edges in pre-order, which
-    # is basically what it is right now. (thanks DFS :))
-    
+
+    # This is for ordered vertices for each of the connected components.
+    spanOrderedVerts = []
+
+    # These are the bridges for each of the connected components
+    bridges = []
+
+    for edgeIdx in range(len(spanEdges)):
+        edges = spanEdges[edgeIdx]
+        treeList = spanTrees[edgeIdx]
+        orderedVertices = preOrderVertices(edges, numVertices)
+        spanOrderedVerts.append(orderedVertices)
+
+        NDVertices = ND(orderedVertices, treeList)
+
+        # Now, the lower and higher bounds.
+        orderedMap = vertToList(orderedVertices)
+
+        lowerBoundVertices = lowerBound(orderedVertices, orderedMap, \
+                                        adjacencyList)
+
+        higherBoundVertices = higherBound(orderedVertices, orderedMap, \
+                                        adjacencyList)
+
+        # Last step...
+        bridgeNodes = getBridgeVertices(NDVertices, lowerBoundVertices, \
+                                        higherBoundVertices, treeList,
+                                        orderedMap)
+        print len(bridgeNodes)
+        bridges.append(bridgeNodes)
+
+    return bridges
 
 
-def ND(node, adjacencyList):
-    pass
+def getBridgeVertices(ND, LB, HB, adjList, ordMap):
+    bridgeNodes = []
+
+    # numVertices; apparently I'm supposed to go post order...
+
+    numVertices = len(ordMap.keys())
+    # All ND, LB, HB, are ordered the same way: increasing in preorder.
+    for idx in range(len(ND)):
+        NDVertex = ND[idx]
+        vertex = NDVertex[1]
+
+        if vertex in adjList:
+            neighbors = adjList[vertex]
+
+            for neighbor in neighbors:
+                order = ordMap[neighbor] # This starts at 1, we are 0-indexed.
+                order = numVertices - order # Now, we going postorder lol.
+
+                neighborND = ND[order - 1][2]
+                neighborLB = LB[order - 1][2]
+                neighborHB = HB[order - 1][2]
+
+                if order - neighborND < neighborLB and \
+                   neighborHB <= order:
+                    if vertex not in bridgeNodes:
+                        bridgeNodes.append(vertex)
+
+                    if neighbor not in bridgeNodes:
+                        bridgeNodes.append(neighbor)
+        else:
+            if vertex not in bridgeNodes:
+                bridgeNodes.append(vertex)
+
+    return bridgeNodes
+
+
+
+
+# From bottom up, we will have the ND values for each vertex.
+# Each ND value is equal to the sum of the values of the children
+# underneath, + 1 for the current node.
+# This also requires some sorting.
+def ND(orderedVertices, adjacencyList):
+    # This will require some dynamic programming.
+    memoizeTable = [0] * len(orderedVertices)
+
+    # Returning tuples of size 3, which include preorder, vertexId, and ND
+    # value.
+    NDVertices = []
+
+    # Sorting so that we go through from children to parents.
+    # This is because parents have a smaller thing than children.
+    orderedVertices.sort(reverse = True)
+
+    for orderedVertex in orderedVertices:
+        vertex = orderedVertex[1]
+        vertexIdx = int(vertex)
+
+        # Not a key.
+        if vertex not in adjacencyList:
+            memoizeTable[vertexIdx] = 1
+
+        else:
+            neighbors = adjacencyList[vertex]
+            aggregateND = 0
+            for neighbor in neighbors:
+                neighborIdx = int(neighbor)
+                aggregateND += memoizeTable[neighborIdx]
+            aggregateND += 1
+            memoizeTable[vertexIdx] = aggregateND
+
+    # Returning this in pre-ordered order.
+    orderedVertices.sort()
+
+    # Returning list of 3-tuples.
+    for orderedVertex in orderedVertices:
+        vertex = orderedVertex[1]
+        NDVertex = (orderedVertex[0], vertex, memoizeTable[int(vertex)])
+        NDVertices.append(NDVertex)
+
+    return NDVertices
+
+# Simply put, the orderedVertices will be made into
+# a map, for easier lower/higher calculations.
+def vertToList(orderedVertices):
+    # This should be in increasing order.
+    # We will have key = vertex
+    # and value = preorder rank.
+
+    preOrderMap = {}
+
+    for orderedVert in orderedVertices:
+        vertex = orderedVert[1]
+        order = orderedVert[0]
+        preOrderMap[vertex] = order
+
+    return preOrderMap
+
+# This just finds the smallest preOrder ranking for each of the 
+# adjacent things.
+def lowerBound(orderedVertices, orderedMap, adjacencyList):
+
+    lowBoundVertices = []
+
+    for orderedVertex in orderedVertices:
+        vertex = orderedVertex[1]
+        lowBound = orderedVertex[0]
+
+        neighbors = adjacencyList[vertex]
+
+        for neighbor in neighbors:
+
+            # All vertices in orderedVert are connected, so it should
+            # have some sort of entry in orderedMap.
+            tempVal = orderedMap[neighbor]
+            if lowBound > tempVal:
+                lowBound = tempVal
+
+        lowBoundTuple = (orderedVertex[0], vertex, lowBound)
+        lowBoundVertices.append(lowBoundTuple)
+
+    return lowBoundVertices
+
+# This just finds the highest preOrder ranking for each of the 
+# adjacent things.
+def higherBound(orderedVertices, orderedMap, adjacencyList):
+
+    highBoundVertices = []
+
+    for orderedVertex in orderedVertices:
+        vertex = orderedVertex[1]
+        highBound = orderedVertex[0]
+
+        neighbors = adjacencyList[vertex]
+
+        for neighbor in neighbors:
+
+            # All vertices in orderedVert are connected, so it should
+            # have some sort of entry in orderedMap.
+            tempVal = orderedMap[neighbor]
+            if highBound < tempVal:
+                highBound = tempVal
+
+        highBoundTuple = (orderedVertex[0], vertex, highBound)
+        highBoundVertices.append(highBoundTuple)
+
+    return highBoundVertices
+
 # This basically parses the stuff and then invokes the bridge.
 def run(rounds = 50):
     # This is the JSON file that will be parsed.
@@ -244,6 +423,9 @@ def run(rounds = 50):
         adjacencyList[key] = val
 
     bridgeNodes = findBridges(adjacencyList)
+
+    outFile = open("bridgeNodes.txt", "w")
+    outFile.write(str(bridgeNodes))
 
 if __name__ == '__main__':
 
