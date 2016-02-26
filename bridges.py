@@ -236,9 +236,11 @@ def findBridges(adjacencyList):
 
         lowerBoundVertices = lowerBound(orderedVertices, orderedMap, \
                                         adjacencyList, treeList)
+        lowerBoundVertices.sort()
 
         higherBoundVertices = higherBound(orderedVertices, orderedMap, \
                                         adjacencyList, treeList)
+        higherBoundVertices.sort()
 
         # Last step...
         bridgeNodes = getBridgeVertices(NDVertices, lowerBoundVertices, \
@@ -257,6 +259,7 @@ def getBridgeVertices(ND, LB, HB, adjList, ordMap):
     # numVertices; apparently I'm supposed to go post order...
 
     numVertices = len(ordMap.keys())
+
     # All ND, LB, HB, are ordered the same way: increasing in preorder.
     for idx in range(len(ND)):
         NDVertex = ND[idx]
@@ -266,23 +269,20 @@ def getBridgeVertices(ND, LB, HB, adjList, ordMap):
             neighbors = adjList[vertex]
 
             for neighbor in neighbors:
-                order = ordMap[neighbor] # This starts at 1, we are 0-indexed.
-                order = numVertices - order # Now, we going postorder lol.
 
+                order = ordMap[neighbor] # This starts at 1, we are 0-indexed.
                 neighborND = ND[order - 1][2]
                 neighborLB = LB[order - 1][2]
                 neighborHB = HB[order - 1][2]
 
-                if order - neighborND < neighborLB and \
-                   neighborHB <= order:
+                if neighborLB == order and \
+                   neighborHB < order + neighborND:
+
                     if vertex not in bridgeNodes:
                         bridgeNodes.append(vertex)
 
                     if neighbor not in bridgeNodes:
                         bridgeNodes.append(neighbor)
-        else:
-            if vertex not in bridgeNodes:
-                bridgeNodes.append(vertex)
 
     return bridgeNodes
 
@@ -367,8 +367,9 @@ def removeKeyValue(sourceDict, edittedDict):
             newDict[key] = values
 
         # Backward
-        nextValues = newDict[val]
-        nextValues.remove(key)
+        for val in vals:
+            nextValues = newDict[val]
+            nextValues.remove(key)
 
         if len(nextValues) == 0:
             del(newDict[val])
@@ -448,7 +449,7 @@ def higherBound(orderedVertices, orderedMap, adjacencyList, treeList):
 
     for orderedVertex in orderedVertices:
         vertex = orderedVertex[1]
-        highBound = orderedVertex[0]
+        highBound = orderedVertex[0] # Sticking with preOrder.
 
         # First, check the current red edges.
         if vertex in redAdjList:
@@ -504,10 +505,14 @@ def run(rounds = 50):
     for key, val in JSONdata.iteritems():
         adjacencyList[key] = val
 
-    bridgeNodes = findBridges(adjacencyList)
 
     outFile = open("bridgeNodes.txt", "w")
-    outFile.write(str(bridgeNodes))
+
+    bridgeNodes = findBridges(adjacencyList)
+    for bridge in bridgeNodes:
+        for node in bridge:
+            outFile.write(str(node) + '\n')
+
 
 if __name__ == '__main__':
 
@@ -516,6 +521,8 @@ if __name__ == '__main__':
         print "Usage: python", sys.argv[0], "GRAPH.json [ITERATIONS]\n" \
               "Example: python", sys.argv[0], "2.5.1.json"
         sys.exit()
+
+    print "Finding the bridges..."
 
     if len(sys.argv) == 3:
         rounds = int(sys.argv[2])
