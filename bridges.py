@@ -3,6 +3,7 @@ import sys
 from pprint import pprint
 import heapq
 import Queue
+import copy
 
 '''
 This file is designed to find the bridge nodes on the undirected graph.
@@ -234,10 +235,10 @@ def findBridges(adjacencyList):
         orderedMap = vertToList(orderedVertices)
 
         lowerBoundVertices = lowerBound(orderedVertices, orderedMap, \
-                                        adjacencyList)
+                                        adjacencyList, treeList)
 
         higherBoundVertices = higherBound(orderedVertices, orderedMap, \
-                                        adjacencyList)
+                                        adjacencyList, treeList)
 
         # Last step...
         bridgeNodes = getBridgeVertices(NDVertices, lowerBoundVertices, \
@@ -248,7 +249,8 @@ def findBridges(adjacencyList):
 
     return bridges
 
-
+# This will just output the bridge vertices. This does the
+# check to see if a vertex is indeed a bridge vertex.
 def getBridgeVertices(ND, LB, HB, adjList, ordMap):
     bridgeNodes = []
 
@@ -283,7 +285,6 @@ def getBridgeVertices(ND, LB, HB, adjList, ordMap):
                 bridgeNodes.append(vertex)
 
     return bridgeNodes
-
 
 
 
@@ -347,26 +348,81 @@ def vertToList(orderedVertices):
 
     return preOrderMap
 
+# Simply put, this will just output a new dictionary with altered values.
+# that don't include the values from sourceDict.
+# We're assuming that edittedDict is undirected, while sourceDict is 
+# directed.
+def removeKeyValue(sourceDict, edittedDict):
+    newDict = copy.deepcopy(edittedDict)
+    for key, vals in sourceDict.iteritems():
+        # Forward
+        values = newDict[key]
+
+        for val in vals:
+            values.remove(val)
+
+        if len(values) == 0:
+            del(newDict[key])
+        else:
+            newDict[key] = values
+
+        # Backward
+        nextValues = newDict[val]
+        nextValues.remove(key)
+
+        if len(nextValues) == 0:
+            del(newDict[val])
+        else:
+            newDict[val] = nextValues
+
+    return newDict
+
 # This just finds the smallest preOrder ranking for each of the 
 # adjacent things.
-def lowerBound(orderedVertices, orderedMap, adjacencyList):
+def lowerBound(orderedVertices, orderedMap, adjacencyList, treeList):
+
+    # Once again, we'll use dynamic programming.
+
+    # Since we want minimums, we set all initial values to be the
+    # size of the vertices.
+    numVertices = len(orderedVertices)
+    lowBounds = [numVertices] * numVertices
 
     lowBoundVertices = []
+
+    # "Red Edge" adjacency list
+    redAdjList = removeKeyValue(treeList, adjacencyList)
+
+    # We're going in post order boyssssssssssss
+    orderedVertices.sort(reverse = True)
 
     for orderedVertex in orderedVertices:
         vertex = orderedVertex[1]
         lowBound = orderedVertex[0]
 
-        neighbors = adjacencyList[vertex]
+        # First, check the current red edges.
+        if vertex in redAdjList:
+            neighbors = redAdjList[vertex]
 
-        for neighbor in neighbors:
+            for neighbor in neighbors:
 
-            # All vertices in orderedVert are connected, so it should
-            # have some sort of entry in orderedMap.
-            tempVal = orderedMap[neighbor]
-            if lowBound > tempVal:
-                lowBound = tempVal
+                # All vertices in orderedVert are connected, so it should
+                # have some sort of entry in orderedMap.
+                tempVal = orderedMap[neighbor]
+                if lowBound > tempVal:
+                    lowBound = tempVal
 
+        # Then, dynamic programming
+        if vertex in treeList:
+            # Use dynamic programming yoo
+            treeChildren = treeList[vertex]
+
+            for children in treeChildren:
+                childLowBound = lowBounds[int(children)]
+                if lowBound > childLowBound:
+                    lowBound = childLowBound
+
+        lowBounds[int(vertex)] = lowBound
         lowBoundTuple = (orderedVertex[0], vertex, lowBound)
         lowBoundVertices.append(lowBoundTuple)
 
@@ -374,28 +430,54 @@ def lowerBound(orderedVertices, orderedMap, adjacencyList):
 
 # This just finds the highest preOrder ranking for each of the 
 # adjacent things.
-def higherBound(orderedVertices, orderedMap, adjacencyList):
+def higherBound(orderedVertices, orderedMap, adjacencyList, treeList):
+
+    # Once again, we'll use dynamic programming.
+
+    # Since we want maximums, we set all initial values to be 1.
+    numVertices = len(orderedVertices)
+    highBounds = [1] * numVertices
 
     highBoundVertices = []
+
+    # "Red Edge" adjacency list
+    redAdjList = removeKeyValue(treeList, adjacencyList)
+
+    # We're going in post order boyssssssssssss
+    orderedVertices.sort(reverse = True)
 
     for orderedVertex in orderedVertices:
         vertex = orderedVertex[1]
         highBound = orderedVertex[0]
 
-        neighbors = adjacencyList[vertex]
+        # First, check the current red edges.
+        if vertex in redAdjList:
+            neighbors = redAdjList[vertex]
 
-        for neighbor in neighbors:
+            for neighbor in neighbors:
 
-            # All vertices in orderedVert are connected, so it should
-            # have some sort of entry in orderedMap.
-            tempVal = orderedMap[neighbor]
-            if highBound < tempVal:
-                highBound = tempVal
+                # All vertices in orderedVert are connected, so it should
+                # have some sort of entry in orderedMap.
+                tempVal = orderedMap[neighbor]
+                if highBound < tempVal:
+                    highBound = tempVal
 
+        # Then, dynamic programming
+        if vertex in treeList:
+            # Use dynamic programming yoo
+            treeChildren = treeList[vertex]
+
+            for children in treeChildren:
+                childHighBound = highBounds[int(children)]
+                if highBound < childHighBound:
+                    highBound = childHighBound
+
+        highBounds[int(vertex)] = highBound
         highBoundTuple = (orderedVertex[0], vertex, highBound)
         highBoundVertices.append(highBoundTuple)
 
     return highBoundVertices
+
 
 # This basically parses the stuff and then invokes the bridge.
 def run(rounds = 50):
