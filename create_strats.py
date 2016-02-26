@@ -48,14 +48,11 @@ def gen_strats(res, nodes):
     topBridgeNodes = []
     for key in bridgeDegrees:
         degreeVal = bridgeDegrees[key]
-        if len(topBridgeNodes) < nodes / 4:
-            heapq.heappush(topBridgeNodes, (degreeVal, key))
-        elif degreeVal > topBridgeNodes[0][0]:
-            heapq.heappop(topBridgeNodes)
-            heapq.heappush(topBridgeNodes, (degreeVal, key))
+        topBridgeNodes.append((degreeVal, key))
 
+    topBridgeNodes.sort(reverse = True)
     print topBridgeNodes
-    
+
     strats = {}
     for alpha in tqdm(range(0, 100 + res, res)):
         for beta in range(0, 100 + res - alpha, res):
@@ -78,7 +75,7 @@ def gen_strats(res, nodes):
                         for nbr in G.neighbors(i):
                             new_score += init_scores[nbr] / G.degree(nbr)
 
-                    if len(top) < nodes - nodes / 4:
+                    if len(top) < nodes - nodes / 10:
                         heapq.heappush(top, (new_score, i))   
                     elif new_score > top[0][0]:
                         heapq.heappop(top)
@@ -89,14 +86,18 @@ def gen_strats(res, nodes):
                     best_nodes.append(i)
 
                 for degree, j in topBridgeNodes:
-                    best_nodes.append(j)
+                    if j not in best_nodes:
+                        best_nodes.append(j)
+                    if len(best_nodes) == nodes:
+                        break
 
                 key = 'lin comb with bridge: (' + str(alpha) + ',' + str(beta) + ',' + str(gamma) + ',' + str(pagerank) + ')'
                 strats[key] = best_nodes
+                print best_nodes
 
-    for alpha in tqdm(range(nodes - nodes / 4)):
-        for beta in range((nodes - nodes / 4) - alpha):
-            gamma = (nodes - nodes / 4) - alpha - beta
+    for alpha in tqdm(range(nodes - nodes / 10)):
+        for beta in range((nodes - nodes / 10) - alpha):
+            gamma = (nodes - nodes / 10) - alpha - beta
             for pagerank in [True, False]:
                 tops = [[], [], []]
                 for i in range(len(G.nodes())):
@@ -118,11 +119,16 @@ def gen_strats(res, nodes):
                 for top in tops:
                     for score, i in top:
                         best_nodes.append(i)
+
                 for degree, j in topBridgeNodes:
-                    best_nodes.append(j)
+                    if j not in best_nodes:
+                        best_nodes.append(j)
+                    if len(best_nodes) == nodes:
+                        break
 
             key = 'mixed with bridge: (' + str(alpha) + ',' + str(beta) + ',' + str(gamma) + ',' + str(pagerank) + ')'
             strats[key] = best_nodes
+            print best_nodes
 
     # Finding the best bridge nodes.
     return strats
