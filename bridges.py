@@ -598,7 +598,7 @@ def bridgeRanking(bridgeNodes, bridgeEdges, adjacencyList):
             sizeOfComponent = dfs(node, cutList)
 
         else:
-            sizeOfComponent = dfs(node, cutList, depth = 2000)
+            sizeOfComponent = dfs(node, cutList, depth = 1500)
         remainingPart = numVertices - sizeOfComponent
         if node in cutList:
             degree = len(cutList[node])
@@ -626,8 +626,7 @@ def dfs(node, adjList, depth = None):
     stack.append(("Root",node))
     vertices = []
     vertices.append(node)
-    if depth != None:
-        capSize = depth
+
     # If this is the case, then the size of partition is just 1 lol.
     if node not in adjList:
         return len(vertices)
@@ -660,8 +659,9 @@ def dfs(node, adjList, depth = None):
             if unVisitedNeighbor == False:
                 currEdge = stack.pop()
 
-            if capSize <= len(vertices):
-                return len(vertices)
+            if depth != None:
+                if depth <= len(vertices):
+                    return len(vertices)
 
     return len(vertices)
 
