@@ -4,7 +4,7 @@ from pprint import pprint
 import heapq
 
 
-def run(NUM_ROUNDS = 50):
+def run(NUM_ROUNDS = 1):
 
     file = sys.argv[1]
     info = file.split('.')
@@ -18,7 +18,7 @@ def run(NUM_ROUNDS = 50):
     # do degree centrality for now
     top = []
 
-    myfile = open("output.txt", "w")
+    myfile = open("deg_centrality.txt", "w")
 
     # This is each node/neighbor pair.
     for key, val in data.iteritems():
@@ -39,7 +39,7 @@ def run(NUM_ROUNDS = 50):
 
     for i in range(NUM_ROUNDS):
         for centrality, node in top:
-            myfile.write("%d\n" %(int(node)))
+            myfile.write("%d,%d\n" %(int(node),int(centrality)))
 
 if __name__ == '__main__':
     if len(sys.argv) < 2:
