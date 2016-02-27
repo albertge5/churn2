@@ -564,7 +564,8 @@ def run(rounds = 50):
 
     for bridge in topBridges:
         bridgeNodeID = bridge[1]
-        outFile.write(str(bridgeNodeID) + "\n")
+        score = bridge[0]
+        outFile.write(str(bridgeNodeID) + "," + str(score) + "\n")
 
 # This is called after finding bridges. The idea is to find a way to measure the
 # significance of some bridge nodes. We do this by searching through ALL the nodes 
@@ -573,6 +574,7 @@ def bridgeRanking(bridgeNodes, bridgeEdges, adjacencyList):
     bridges = []
     edges = []
     numVertices = len(adjacencyList.keys())
+    halfGraph = numVertices / 2.0
     sortedBridges = []
     cutList = copy.deepcopy(adjacencyList)
 
@@ -607,8 +609,8 @@ def bridgeRanking(bridgeNodes, bridgeEdges, adjacencyList):
 
         # We are measuring by doing degree/partition size.
         # The larger the value, the more valuable.
-        partitionBridge = (2 * degree + sizeOfComponent / \
-                           float(sizeOfComponent * remainingPart), node)
+        partitionBridge = (sizeOfComponent * (remainingPart + degree) / \
+                           float(halfGraph * halfGraph - sizeOfComponent * remainingPart), node)
         sortedBridges.append(partitionBridge)
 
         # If the graph is too large, we need to tradeoff and just look at
