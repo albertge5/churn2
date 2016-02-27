@@ -4,6 +4,7 @@ from pprint import pprint
 import heapq
 import Queue
 import copy
+from tqdm import *
 
 '''
 This file is designed to find the bridge nodes on the undirected graph.
@@ -32,6 +33,47 @@ def createAdjList(edges):
             adjList[srcNode] = [destNode]
 
     return adjList
+
+# This is called to remove bridge edges from a graph, so we just have a collection
+# of strongly connected components.
+
+# Apparently, some edges go to themselves. Lol. I'm removing those too.
+def removeEdges(edges, adjList):
+    for edge in edges:
+        node1 = edge[0]
+        node2 = edge[1]
+
+        # Forward direction:
+        if node1 in adjList:
+            neighbors = adjList[node1]
+            neighbors.remove(node2)
+
+            # Removing edges that go to itself: These
+            # aren't bridge edges.
+            if node1 in neighbors:
+                neighbors.remove(node1)
+
+            adjList[node1] = neighbors
+
+        # Backwards direction:
+        if node2 in adjList:
+            neighbors = adjList[node2]
+            neighbors.remove(node1)
+
+            if node2 in neighbors:
+                neighbors.remove(node2)
+
+            adjList[node2] = neighbors 
+
+        # Removing empty keys.
+        if len(adjList[node1]) == 0:
+            del(adjList[node1])
+
+        if len(adjList[node2]) == 0:
+            del(adjList[node2])
+
+    return adjList
+
 
 # This will output an adjacencyList to a JSON file. This is just to check
 # the legitimacy of an adjacency list.
@@ -80,6 +122,8 @@ def findMinSpanTrees(adjacencyList):
         startNode = adjacencyList.keys()[startIdx]
         neighbors = adjacencyList[startNode]
         vertices.append(startNode)
+
+    stack.append(("ROOT", startNode))
 
     # Once we hit a connected component, we start populating DAT QUEUE.
     for neighbor in neighbors:
@@ -130,12 +174,12 @@ def findMinSpanTrees(adjacencyList):
 
                 if startNode not in vertices:
                     vertices.append(startNode)  
-
+            stack.append("DONE")
+            stack.append(("ROOT", startNode))
             # Once we hit a connected component, we start populating DAT QUEUE.
             for neighbor in neighbors:
                 edge = (startNode, neighbor)
                 if neighbor not in vertices:
-                    stack.append("DONE")
                     currEdge = edge
                     vertices.append(neighbor)
                     edges.append(edge)
@@ -223,6 +267,9 @@ def findBridges(adjacencyList):
     # These are the bridges for each of the connected components
     bridges = []
 
+    # bridgeEdges
+    bridgeEdges = []
+
     for edgeIdx in range(len(spanEdges)):
         edges = spanEdges[edgeIdx]
         treeList = spanTrees[edgeIdx]
@@ -243,19 +290,20 @@ def findBridges(adjacencyList):
         higherBoundVertices.sort()
 
         # Last step...
-        bridgeNodes = getBridgeVertices(NDVertices, lowerBoundVertices, \
+        bridgeNodes, bridgeEdge = getBridgeVertices(NDVertices, lowerBoundVertices, \
                                         higherBoundVertices, treeList,
                                         orderedMap)
         print len(bridgeNodes)
         bridges.append(bridgeNodes)
+        bridgeEdges.append(bridgeEdge)
 
-    return bridges
+    return (bridges, bridgeEdges)
 
 # This will just output the bridge vertices. This does the
 # check to see if a vertex is indeed a bridge vertex.
 def getBridgeVertices(ND, LB, HB, adjList, ordMap):
     bridgeNodes = []
-
+    bridgeEdges = []
     # numVertices; apparently I'm supposed to go post order...
 
     numVertices = len(ordMap.keys())
@@ -277,15 +325,17 @@ def getBridgeVertices(ND, LB, HB, adjList, ordMap):
 
                 if neighborLB == order and \
                    neighborHB < order + neighborND:
-
+                    bridgeEdge = (vertex, neighbor)
                     if vertex not in bridgeNodes:
                         bridgeNodes.append(vertex)
 
                     if neighbor not in bridgeNodes:
                         bridgeNodes.append(neighbor)
 
-    return bridgeNodes
+                    if bridgeEdge not in bridgeEdges:
+                        bridgeEdges.append(bridgeEdge)
 
+    return (bridgeNodes, bridgeEdges)
 
 
 # From bottom up, we will have the ND values for each vertex.
@@ -508,10 +558,113 @@ def run(rounds = 50):
 
     outFile = open("bridgeNodes.txt", "w")
 
-    bridgeNodes = findBridges(adjacencyList)
+    bridgeNodes, bridgeEdges = findBridges(adjacencyList)
+
+    topBridges = bridgeRanking(bridgeNodes, bridgeEdges, adjacencyList)
+
+    for bridge in topBridges:
+        bridgeNodeID = bridge[1]
+        outFile.write(str(bridgeNodeID) + "\n")
+
+# This is called after finding bridges. The idea is to find a way to measure the
+# significance of some bridge nodes. We do this by searching through ALL the nodes 
+# that we found, and storing the respective size of the partition that they hold.
+def bridgeRanking(bridgeNodes, bridgeEdges, adjacencyList):
+    bridges = []
+    edges = []
+    numVertices = len(adjacencyList.keys())
+    sortedBridges = []
+    cutList = copy.deepcopy(adjacencyList)
+
+    # Unpacking all of the different components.
     for bridge in bridgeNodes:
         for node in bridge:
-            outFile.write(str(node) + '\n')
+            bridges.append(node)
+
+    # Unpacking all the edges
+    for edge in bridgeEdges:
+        for cut in edge:
+            edges.append(cut)
+
+
+    # Removing the appropriate edges
+    cutList = removeEdges(edges, cutList)
+
+    # Now, searching via each node.
+    for nodeID in tqdm(range(len(bridges))):
+        node = bridges[nodeID]
+
+        if numVertices < 1000:
+            sizeOfComponent = dfs(node, cutList)
+
+        else:
+            sizeOfComponent = dfs(node, cutList, depth = 2000)
+        remainingPart = numVertices - sizeOfComponent
+        if node in cutList:
+            degree = len(cutList[node])
+        else:
+            degree = 0
+
+        # We are measuring by doing degree/partition size.
+        # The larger the value, the more valuable.
+        partitionBridge = (2 * degree + sizeOfComponent / \
+                           float(sizeOfComponent * remainingPart), node)
+        sortedBridges.append(partitionBridge)
+
+        # If the graph is too large, we need to tradeoff and just look at
+        # degrees for sorting.
+    sortedBridges.sort(reverse = True)
+
+    return sortedBridges
+
+
+# The algorithm here is almost identical to that of the minimum spanning 
+# Tree. Look at the code for that to understand this.
+def dfs(node, adjList, depth = None):
+    stack = []
+    stack.append("DONE")
+    stack.append(("Root",node))
+    vertices = []
+    vertices.append(node)
+    if depth != None:
+        capSize = depth
+    # If this is the case, then the size of partition is just 1 lol.
+    if node not in adjList:
+        return len(vertices)
+
+    else:
+        neighbors = adjList[node]
+
+        for neighbor in neighbors:
+            if neighbor not in vertices:
+                currEdge = (node, neighbor)
+                vertices.append(neighbor)
+                break
+
+        while currEdge != "DONE":
+
+            srcNode = currEdge[0]
+            destNode = currEdge[1]
+
+            nextNeighbors = adjList[destNode]
+            unVisitedNeighbor = False
+
+            for nextNeighbor in nextNeighbors:
+                if nextNeighbor not in vertices:
+                    stack.append(currEdge)
+                    vertices.append(nextNeighbor)
+                    currEdge = (destNode, nextNeighbor)
+                    unVisitedNeighbor = True
+                    break
+
+            if unVisitedNeighbor == False:
+                currEdge = stack.pop()
+
+            if capSize <= len(vertices):
+                return len(vertices)
+
+    return len(vertices)
+
 
 
 if __name__ == '__main__':
