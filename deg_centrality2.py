@@ -13,7 +13,7 @@ so TA will get the nth degree node, and we will get the 1st highest
 degree node.
 '''
 
-def run(NUM_ROUNDS = 50):
+def run(NUM_ROUNDS = 1):
     # This is the JSON file that will be parsed.
     file = sys.argv[1]
     info = file.split('.')
@@ -28,7 +28,7 @@ def run(NUM_ROUNDS = 50):
     top = []
     adj_list = []
 
-    myfile = open("output.txt", "w")
+    myfile = open("deg_centrality2.txt", "w")
 
     # This is each node/neighbor pair.
     for key, val in data.iteritems():
@@ -60,7 +60,7 @@ def run(NUM_ROUNDS = 50):
 
     for i in range(NUM_ROUNDS):
         for centrality, node in top:
-            myfile.write("%d\n" %(int(node)))
+            myfile.write("%d,%d\n" %(int(node),int(centrality)))
 
 
 

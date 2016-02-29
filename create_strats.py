@@ -4,6 +4,8 @@ import heapq
 import sys
 from tqdm import *
 import os
+import subprocess
+
 filename = '2.5.2'
 nodes = 10
 if len(sys.argv) > 1:
@@ -13,6 +15,16 @@ if len(sys.argv) > 2:
 print filename
 print nodes
 
+# Doing bridge nodes.
+subprocess.call(["python", "bridges.py", filename])
+bridgeFile = open("bridgeNodes.txt", "r")
+bridgeNodes = []
+for line in bridgeFile:
+    if line != "":
+        bridgeNodes.append(int(line.rstrip()))
+
+
+
 G = nx.Graph()
 with open(filename) as json_file:
     data = json.load(json_file)
@@ -21,11 +33,26 @@ with open(filename) as json_file:
         for j in range(len(data[str(i)])):
             G.add_edge(i, int(data[str(i)][j]))
 
+# Measuring using degrees.
+bridgeDegrees = nx.degree(G, bridgeNodes)
+
+
 bc = nx.betweenness_centrality(G)
 cc = nx.closeness_centrality(G)
 dc = nx.degree_centrality(G)
 print "graph analysis completed"
+
+# Going to also look at bridge nodes. I'm going to add some to all
+# current nodes.
 def gen_strats(res, nodes):
+    topBridgeNodes = []
+    for key in bridgeDegrees:
+        degreeVal = bridgeDegrees[key]
+        topBridgeNodes.append((degreeVal, key))
+
+    topBridgeNodes.sort(reverse = True)
+    print topBridgeNodes
+
     strats = {}
     for alpha in tqdm(range(0, 100 + res, res)):
         for beta in range(0, 100 + res - alpha, res):
@@ -48,7 +75,7 @@ def gen_strats(res, nodes):
                         for nbr in G.neighbors(i):
                             new_score += init_scores[nbr] / G.degree(nbr)
 
-                    if len(top) < nodes:
+                    if len(top) < nodes - nodes / 10:
                         heapq.heappush(top, (new_score, i))   
                     elif new_score > top[0][0]:
                         heapq.heappop(top)
@@ -57,12 +84,20 @@ def gen_strats(res, nodes):
                 best_nodes = []
                 for score, i in top:
                     best_nodes.append(i)
-                key = 'lin comb: (' + str(alpha) + ',' + str(beta) + ',' + str(gamma) + ',' + str(pagerank) + ')'
-                strats[key] = best_nodes
 
-    for alpha in tqdm(range(nodes)):
-        for beta in range(nodes - alpha):
-            gamma = nodes - alpha - beta
+                for degree, j in topBridgeNodes:
+                    if j not in best_nodes:
+                        best_nodes.append(j)
+                    if len(best_nodes) == nodes:
+                        break
+
+                key = 'lin comb with bridge: (' + str(alpha) + ',' + str(beta) + ',' + str(gamma) + ',' + str(pagerank) + ')'
+                strats[key] = best_nodes
+                print best_nodes
+
+    for alpha in tqdm(range(nodes - nodes / 10)):
+        for beta in range((nodes - nodes / 10) - alpha):
+            gamma = (nodes - nodes / 10) - alpha - beta
             for pagerank in [True, False]:
                 tops = [[], [], []]
                 for i in range(len(G.nodes())):
@@ -85,9 +120,17 @@ def gen_strats(res, nodes):
                     for score, i in top:
                         best_nodes.append(i)
 
-            key = 'mixed: (' + str(alpha) + ',' + str(beta) + ',' + str(gamma) + ',' + str(pagerank) + ')'
+                for degree, j in topBridgeNodes:
+                    if j not in best_nodes:
+                        best_nodes.append(j)
+                    if len(best_nodes) == nodes:
+                        break
+
+            key = 'mixed with bridge: (' + str(alpha) + ',' + str(beta) + ',' + str(gamma) + ',' + str(pagerank) + ')'
             strats[key] = best_nodes
-            
+            print best_nodes
+
+    # Finding the best bridge nodes.
     return strats
                             
 our_strats = gen_strats(5, nodes)
