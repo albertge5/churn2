@@ -96,6 +96,49 @@ During this Pandemaniac project, our group ``churn'' implemented a number of alg
 seed nodes in a network to optimize the spread of a simulated epidemic across the graph. 
 The code was written in a Python base. 
 
+\subsection*{Counterexample}
+\begin{tikzpicture}[auto,node distance=3cm, thick,main node/.style={circle,fill=blue!50,minimum size=1cm},sub node/.style={circle,fill=red!50,minimum size=1cm}]
+\node[main node] (1) {(1.5,2)};
+\node[sub node] (2) [right of=1] {(2,1.5)};
+\node[sub node] (3) [below of=1] {(2,1.5)};
+\node[main node] (4) [right of=3] {(1.5,2)};
+
+\path[draw, thick]
+(1) edge node {} (2)
+edge node {} (3)
+(4) edge node {} (2)
+edge node {} (3)
+;
+\end{tikzpicture}\\
+Next iteration is\\
+\begin{tikzpicture}[auto,node distance=3cm, thick,main node/.style={circle,fill=blue!50,minimum size=1cm},sub node/.style={circle,fill=red!50,minimum size=1cm}]
+\node[sub node] (1) {(2,1.5)};
+\node[main node] (2) [right of=1] {(1.5,2)};
+\node[main node] (3) [below of=1] {(1.5,2)};
+\node[sub node] (4) [right of=3] {(2,1.5)};
+
+\path[draw, thick]
+(1) edge node {} (2)
+edge node {} (3)
+(4) edge node {} (2)
+edge node {} (3)
+;
+\end{tikzpicture}\\
+Which we see cycles back to \\
+\begin{tikzpicture}[auto,node distance=3cm, thick,main node/.style={circle,fill=blue!50,minimum size=1cm},sub node/.style={circle,fill=red!50,minimum size=1cm}]
+\node[main node] (1) {(1.5,2)};
+\node[sub node] (2) [right of=1] {(2,1.5)};
+\node[sub node] (3) [below of=1] {(2,1.5)};
+\node[main node] (4) [right of=3] {(1.5,2)};
+
+\path[draw, thick]
+(1) edge node {} (2)
+edge node {} (3)
+(4) edge node {} (2)
+edge node {} (3)
+;
+\end{tikzpicture}\\
+Meaning equilibrium will never be reached. 
 \section{Initial Framework}
     We began this project by first understanding and processing the data from the format of a JSON file.
     We wrote some initial files to load the data from a JSON file, and use some naive algorithm to
@@ -123,7 +166,7 @@ The code was written in a Python base.
     This algorithm ended up beating both TA\_fewer and TA\_degree, securing the remaining
     required points for the programming side of the project. 
      
-    
+
 \section{Development and Improvements}
 
 \subsection*{Linear Combinations}
