@@ -148,6 +148,8 @@ def findMinSpanTrees(adjacencyList):
         if currEdge == "DONE":
             # First, adding the new edges and the adjacency matrix into
             # the appropriate lists.
+            print "current vertex length: " + str(len(vertices))
+            print "Total length: " + str(numVertices)
             treeEdges.append(edges)
             adjList = createAdjList(edges)
             treesAdjList.append(adjList)
@@ -184,7 +186,6 @@ def findMinSpanTrees(adjacencyList):
                     vertices.append(neighbor)
                     edges.append(edge)
                     break
-
         # Occurs if there already is stuff inside the Queue.
         else:
             srcNode = currEdge[0]
@@ -209,9 +210,10 @@ def findMinSpanTrees(adjacencyList):
                 currEdge = stack.pop()
 
     # This is for the last connected component.
-    treeEdges.append(edges)
-    adjList = createAdjList(edges)
-    treesAdjList.append(adjList)
+    if len(edges) != 0:
+        treeEdges.append(edges)
+        adjList = createAdjList(edges)
+        treesAdjList.append(adjList)
 
     return (treeEdges, treesAdjList)
 
@@ -259,6 +261,7 @@ def findBridges(adjacencyList):
 
     # First, we need to find the minimum spanning trees
     spanEdges, spanTrees = findMinSpanTrees(adjacencyList)
+
     listToJSON(spanTrees[0])
 
     # This is for ordered vertices for each of the connected components.
@@ -296,8 +299,9 @@ def findBridges(adjacencyList):
         print len(bridgeNodes)
         bridges.append(bridgeNodes)
         bridgeEdges.append(bridgeEdge)
-
     return (bridges, bridgeEdges)
+
+
 
 # This will just output the bridge vertices. This does the
 # check to see if a vertex is indeed a bridge vertex.
@@ -600,7 +604,7 @@ def bridgeRanking(bridgeNodes, bridgeEdges, adjacencyList):
             sizeOfComponent = dfs(node, cutList)
 
         else:
-            sizeOfComponent = dfs(node, cutList, depth = 1500)
+            sizeOfComponent = dfs(node, cutList, depth = 1000)
         remainingPart = numVertices - sizeOfComponent
         if node in cutList:
             degree = len(cutList[node])
@@ -610,7 +614,7 @@ def bridgeRanking(bridgeNodes, bridgeEdges, adjacencyList):
         # We are measuring by doing degree/partition size.
         # The larger the value, the more valuable.
         partitionBridge = (sizeOfComponent * (remainingPart + degree) / \
-                           float(halfGraph * halfGraph - sizeOfComponent * remainingPart), node)
+                           float(halfGraph * halfGraph - sizeOfComponent * remainingPart + 1), node)
         sortedBridges.append(partitionBridge)
 
         # If the graph is too large, we need to tradeoff and just look at
