@@ -171,7 +171,11 @@ Meaning equilibrium will never be reached.
 
 \subsection*{Linear Combinations}
 
+\subsection*{Top-K Mix}
+This algorithm involved finding the degree centrality. closeness centrality, and betweeness centrality, then selecting the top $A, B, C$ respectively from each. 
+
 \subsection*{Monte Carlo}
+Monte Carlo simulations were done on the various linear combinations and top-K mixes. A number of samples of different linear combinations in .05 steps and every possible selection of A, B, C for a top-K mix was used to represent different strategies we were considering generating different seeds on 16 graphs. In addition, we also hand selected seeds in an attempt to immitate TA\_more. We then pitted all the strategies against each other, with one side getting the normal amount of seeds and the player 2 getting 20\% more seeds. Doing so involved playing approximately 2 million games, so the simulation was run (\texttt{runSim.py}) across multiple computers before the outputs were agreggated using \texttt{combineResults.py}. These results were then used for our final attempt against TA\_more. The final result was a linear combination with weights $[.70, .25, .5]$ which had won at least 5 out of 16 graphs against every player 2 (which had 20\% more seed nodes). 
 
 \subsection*{Bridges}
 
@@ -212,10 +216,9 @@ Meaning equilibrium will never be reached.
 \section{Contributions}
 There are four members in this group: Kevin Chang, Timothy Chou, Albert Ge, and John Li. Here are each of their contributions:
 \begin{itemize}
-  \item \textsc{Kevin Chang}: 
-  \item \textsc{Timothy Chou}: 
-  \item \textsc{Albert Ge}: Wrote most of the initial framework - \texttt{deg\_centrality.py},
-  \texttt{deg\_centrality2.py}, \texttt{submit.py}, 
+  \item \textsc{Kevin Chang}: Wrote linear combination strategy generator \texttt{create\_strats.py}
+  \item \textsc{Timothy Chou}: Wrote and designed algorithm to beat TA\_degree. Wrote monte carlo simulator \texttt{runSim.py}, wrote mixed top-K strategy in \texttt{create\_strats.py} and ran tests to find optimal linear combination.
+    \item \textsc{Albert Ge}: Wrote most of the initial framework - \texttt{deg\_centrality.py}, \texttt{submit.py}, 
   Wrote the testing script \texttt{runStrat.py}. 
   Wrote \texttt{mixed.py}, the script for employing mixed strategies according to
   a probabilistic distribution.
